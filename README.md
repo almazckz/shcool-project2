@@ -1,13 +1,12 @@
-<!Bosh #2>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Помощник для учебы</title>
+  <title>AI Помощник</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* Глобальные настройки для аккуратного дизайна */
-    * { box-sizing: border-box; }
-    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: #0f172a;
@@ -16,322 +15,266 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
-      margin: 0;
       padding: 15px;
     }
-
     .container {
       background: #1e293b;
-      padding: 24px;
-      border-radius: 16px;
+      padding: 30px;
+      border-radius: 20px;
       width: 100%;
-      max-width: 480px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-    }
-
-    h1 { 
-      text-align: center; 
-      font-size: 24px; 
-      margin-bottom: 20px; 
-      color: #38bdf8;
-    }
-
-    /* Секция ключа */
-    .key-section {
-      background: #0f172a;
-      padding: 12px;
-      border-radius: 10px;
-      margin-bottom: 20px;
+      max-width: 500px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
       border: 1px solid #334155;
     }
+    h1 { text-align: center; color: #60a5fa; margin-bottom: 25px; font-size: 22px; }
 
-    .key-section label {
-      display: block;
-      font-size: 11px;
-      color: #94a3b8;
-      margin-bottom: 5px;
-      text-transform: uppercase;
-    }
-
-    input[type="password"] {
+    input {
       width: 100%;
-      padding: 8px;
-      border-radius: 6px;
-      border: 1px solid #1e293b;
-      background: #1e293b;
-      color: #38bdf8;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
       outline: none;
+      font-size: 15px;
+      transition: 0.3s;
+      font-family: inherit;
     }
+    input:focus { border-color: #60a5fa; }
 
-    /* Поле ввода вопроса */
     textarea {
       width: 100%;
       height: 120px;
-      background: #f8fafc;
-      color: #0f172a;
+      color: #f8fafc;
+      background: #1e293b;
+      border: 1px solid #475569;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      outline: none;
+      resize: none;
+      font-size: 15px;
+      transition: 0.3s;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: #60a5fa; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
       border: none;
       border-radius: 10px;
-      padding: 15px;
-      font-size: 16px;
-      margin-bottom: 15px;
-      resize: none;
-      outline: none;
-    }
-
-    /* Кнопки управления */
-    .button-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
       font-weight: bold;
       cursor: pointer;
-      transition: all 0.2s;
-      font-size: 14px;
+      transition: 0.2s;
+      font-size: 15px;
+      margin-bottom: 10px;
+      font-family: inherit;
     }
+    .btn-blue { background: #60a5fa; color: #0f172a; }
+    .btn-blue:hover { background: #93c5fd; transform: scale(0.98); }
+    .btn-gray { background: #334155; color: #94a3b8; }
+    .btn-gray:hover { background: #475569; }
+    .btn-red { background: #ef4444; color: white; width: auto; padding: 8px 14px; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .btn-red:hover { background: #f87171; }
 
-    .btn-main { background: #38bdf8; color: #0f172a; }
-    .btn-alt { background: #fbbf24; color: #0f172a; grid-column: span 2; }
-    
-    button:hover { opacity: 0.9; transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
-    button:disabled { background: #475569; cursor: wait; opacity: 0.7; }
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-    /* Окно ответа */
-    .output-box {
+    #output {
       background: #020617;
       padding: 15px;
-      border-radius: 10px;
-      min-height: 100px;
+      border-radius: 12px;
       border: 1px solid #334155;
+      margin-top: 20px;
+      min-height: 100px;
+      white-space: pre-wrap;
       font-size: 15px;
       line-height: 1.6;
-      white-space: pre-wrap;
     }
+    .loader {
+      color: #fbbf24;
+      font-size: 14px;
+      display: none;
+      margin: 10px 0;
+      text-align: center;
+      font-style: italic;
+    }
+    .error-msg { font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 20px; }
+    .user-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+    .user-email { color: #60a5fa; font-size: 13px; }
 
-    .loader { color: #38bdf8; font-style: italic; display: none; }
+    .tab-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+    .tab-btn.active { background: #60a5fa; color: #0f172a; border-color: #60a5fa; font-weight: bold; }
+
+    #authPage, #appPage { display: none; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>AI Помошник</h1>
+  <h1>🚀 AI Помощник</h1>
 
-  <div class="key-section">
-  <label>OpenAI API Key</label>
-  <input type="password" id="apiKey" placeholder="sk-..." />
-  <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px;">
-    <input type="checkbox" id="saveKey" style="cursor: pointer;">
-    <label for="saveKey" style="font-size: 11px; color: #94a3b8; cursor: pointer; text-transform: none;">
-      Запомнить ключ на этом устройстве
-    </label>
-  </div>
-</div>
-    <label>OpenAI API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-..." />
-  </div>
+  <!-- СТРАНИЦА ВХОДА -->
+  <div id="authPage">
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="switchTab('login')">Войти</button>
+      <button class="tab-btn" onclick="switchTab('register')">Регистрация</button>
+    </div>
 
-  <textarea id="userInput" placeholder="Напиши тему или задачу..."></textarea>
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Пароль">
 
-  <div class="button-group">
-    <button id="solveBtn" onclick="runAI('solve')" class="btn-main">Решить задачу</button>
-    <button id="explainBtn" onclick="runAI('explain')" class="btn-main">Объяснить тему</button>
-    <button id="summaryBtn" onclick="runAI('summary')" class="btn-alt">Сделать краткий конспект</button>
+    <div class="error-msg" id="authError"></div>
+
+    <button class="btn btn-blue" id="authBtn" onclick="handleAuth()">Войти</button>
   </div>
 
-  <div id="status" class="loader">Ищу ответ в базе знаний...</div>
-  <div class="output-box" id="resultDisplay">Ваш ответ будет здесь...</div>
+  <!-- СТРАНИЦА ПРИЛОЖЕНИЯ -->
+  <div id="appPage">
+    <div class="user-info">
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn-red" onclick="logout()">Выйти</button>
+    </div>
+
+    <textarea id="userInput" placeholder="Напиши задачу или вопрос..."></textarea>
+
+    <div class="loader" id="loader">Нейросеть обрабатывает запрос...</div>
+
+    <div class="btn-row">
+      <button onclick="askAI()" class="btn btn-blue" style="grid-column: span 2; margin-bottom: 10px;">Отправить</button>
+      <button onclick="document.getElementById('userInput').value=''" class="btn btn-gray">Очистить</button>
+      <button onclick="document.getElementById('output').textContent=''" class="btn btn-gray">Сбросить</button>
+    </div>
+
+    <div id="output">Ответ появится здесь...</div>
+  </div>
 </div>
 
 <script>
-  // Загружаем ключ при старте страницы
-  const keyInput = document.getElementById('apiKey');
-  keyInput.value = localStorage.getItem('_helper_key') || '';
+  const SUPABASE_URL = 'https://ambctoxletkjmmrpcfpe.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_9-zr3XWaB2gl2LtB0Gg2Qw_HU8CTe_q';
+  // AIzaSyBWJ9b4uxQIo-6t71UrRvPxCeDzEz2UzJw:
+  const GEMINI_KEY = 'ТВОЙ_GEMINI_КЛЮЧ';
 
-async function runAI(mode) {
-    const key = keyInput.value.trim();
-    const prompt = document.getElementById('userInput').value.trim();
-    const status = document.getElementById('status');
-    const buttons = document.querySelectorAll('button');
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    if (!key) return alert("Нужен API-ключ!");
-    if (!prompt) return alert("Напиши вопрос!");
+  let currentTab = 'login';
 
-    // Управление сохранением: если галочка стоит — сохраняем, если нет — удаляем
-    if (saveCheckbox.checked) {
-      localStorage.setItem('_helper_key', key);
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+    });
+    document.getElementById('authBtn').textContent = tab === 'login' ? 'Войти' : 'Зарегистрироваться';
+    document.getElementById('authError').textContent = '';
+  }
+
+  async function handleAuth() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errEl = document.getElementById('authError');
+    errEl.textContent = '';
+
+    if (!email || !password) { errEl.style.color = '#f87171'; errEl.textContent = 'Введи email и пароль'; return; }
+
+    const btn = document.getElementById('authBtn');
+    btn.textContent = 'Подождите...';
+    btn.disabled = true;
+
+    try {
+      let result;
+      if (currentTab === 'login') {
+        result = await sb.auth.signInWithPassword({ email, password });
+      } else {
+        result = await sb.auth.signUp({ email, password });
+      }
+
+      if (result.error) throw result.error;
+
+      if (currentTab === 'register') {
+        errEl.style.color = '#4ade80';
+        errEl.textContent = '✅ Аккаунт создан! Теперь войди.';
+        switchTab('login');
+      } else {
+        showApp(result.data.user);
+      }
+    } catch (err) {
+      errEl.style.color = '#f87171';
+      errEl.textContent = '❌ ' + (err.message || 'Ошибка входа');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = currentTab === 'login' ? 'Войти' : 'Зарегистрироваться';
+    }
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('appPage').style.display = 'none';
+    document.getElementById('authPage').style.display = 'block';
+  }
+
+  function showApp(user) {
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'block';
+    document.getElementById('userEmail').textContent = user.email;
+  }
+
+  async function askAI() {
+    const text = document.getElementById('userInput').value.trim();
+    const output = document.getElementById('output');
+    const loader = document.getElementById('loader');
+
+    if (!text) { alert('Напиши вопрос!'); return; }
+
+    loader.style.display = 'block';
+    output.textContent = 'Думаю...';
+    output.style.opacity = '0.5';
+
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data?.error?.message || `Ошибка ${response.status}`);
+
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!reply) throw new Error('Пустой ответ');
+
+      output.textContent = reply;
+    } catch (err) {
+      output.textContent = '❌ Ошибка: ' + err.message;
+    } finally {
+      loader.style.display = 'none';
+      output.style.opacity = '1';
+    }
+  }
+
+  // Проверяем сессию при загрузке
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      showApp(data.session.user);
     } else {
-      localStorage.removeItem('_helper_key');
+      document.getElementById('authPage').style.display = 'block';
     }
-
-    status.style.display = 'block';
-    resultDisplay.innerText = '';
-    
-    // Блокируем кнопки на время запроса
-    buttons.forEach(b => b.disabled = true);
-
-    let systemMsg = "Ты — помощник для ученика 7 класса.";
-    if (mode === 'solve') systemMsg += " Реши задачу по шагам.";
-    if (mode === 'summary') systemMsg += " Сделай краткий конспект.";
-
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            { role: "system", content: systemMsg },
-            { role: "user", content: prompt }
-          ]
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Если API вернул ошибку (например, кончились деньги)
-        throw new Error(data.error ? data.error.message : "Ошибка API");
-      }
-
-      // Выводим результат
-      resultDisplay.innerText = data.choices[0].message.content;
-
-    } catch (err) {
-      // Обработка сетевых ошибок (включая Failed to fetch)
-      resultDisplay.innerText = "⚠️ Ошибка:\n" + err.message + 
-                                 "\n\nПроверь VPN или баланс ключа.";
-    } finally {
-      // В любом случае убираем надпись "Думаю" и включаем кнопки
-      status.style.display = 'none';
-      buttons.forEach(b => b.disabled = false);
-    }
-  }
-    const key = keyInput.value.trim();
-    const prompt = document.getElementById('userInput').value.trim();
-    const status = document.getElementById('status');
-    const buttons = document.querySelectorAll('button');
-
-    if (!key) return alert("Нужен API-ключ!");
-    if (!prompt) return alert("Напиши вопрос!");
-
-    // Управление сохранением: если галочка стоит — сохраняем, если нет — удаляем
-    if (saveCheckbox.checked) {
-      localStorage.setItem('_helper_key', key);
-    } else {
-      localStorage.removeItem('_helper_key');
-    }
-
-    status.style.display = 'block';
-    resultDisplay.innerText = '';
-    
-    // Блокируем кнопки на время запроса
-    buttons.forEach(b => b.disabled = true);
-
-    let systemMsg = "Ты — помощник для ученика 7 класса.";
-    if (mode === 'solve') systemMsg += " Реши задачу по шагам.";
-    if (mode === 'summary') systemMsg += " Сделай краткий конспект.";
-
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            { role: "system", content: systemMsg },
-            { role: "user", content: prompt }
-          ]
-        })
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // Если API вернул ошибку (например, кончились деньги)
-        throw new Error(data.error ? data.error.message : "Ошибка API");
-      }
-
-      // Выводим результат
-      resultDisplay.innerText = data.choices[0].message.content;
-
-    } catch (err) {
-      // Обработка сетевых ошибок (включая Failed to fetch)
-      resultDisplay.innerText = "⚠️ Ошибка:\n" + err.message + 
-                                 "\n\nПроверь VPN или баланс ключа.";
-    } finally {
-      // В любом случае убираем надпись "Думаю" и включаем кнопки
-      status.style.display = 'none';
-      buttons.forEach(b => b.disabled = false);
-    }
-  }
-    const key = keyInput.value.trim();
-    const prompt = document.getElementById('userInput').value.trim();
-    const status = document.getElementById('status');
-    const result = document.getElementById('resultDisplay');
-    const buttons = document.querySelectorAll('button');
-
-    if (!key) return alert("Вставь API-ключ!");
-    if (!prompt) return alert("Сначала напиши вопрос.");
-
-    // Сохраняем ключ
-    localStorage.setItem('_helper_key', key);
-
-    // Подготовка интерфейса
-    status.style.display = 'block';
-    result.innerText = '';
-    buttons.forEach(b => b.disabled = true);
-
-    let systemMsg = "Ты — помощник для ученика 7 класса. Ответ должен быть простым и понятным.";
-    if (mode === 'solve') systemMsg = "Реши задачу по физике, математике или химии. Распиши решение по действиям.";
-    if (mode === 'summary') systemMsg = "Сделай краткую выжимку по теме в виде списка из 5 пунктов.";
-
-    try {
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: [
-            { role: "system", content: systemMsg },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error ? data.error.message : "Ошибка API");
-      }
-
-      result.innerText = data.choices[0].message.content;
-
-    } catch (err) {
-      console.error(err);
-      result.innerText = "⚠️ Ошибка:\n" + err.message + 
-                         "\n\nЕсли написано 'Failed to fetch', проверь VPN!";
-    } finally {
-      status.style.display = 'none';
-      buttons.forEach(b => b.disabled = false);
-    }
-  }
+  });
 </script>
 
 </body>
