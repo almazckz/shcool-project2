@@ -3,81 +3,278 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Помощник 7 Класс</title>
+  <title>AI Помощник</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 15px; }
-    .container { background: #1e293b; padding: 25px; border-radius: 20px; width: 100%; max-width: 500px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); border: 1px solid #334155; }
-    h1 { text-align: center; color: #60a5fa; font-size: 22px; margin-bottom: 20px; }
-    input, textarea { width: 100%; background: #0f172a; border: 1px solid #334155; color: #60a5fa; padding: 12px; border-radius: 10px; margin-bottom: 15px; outline: none; font-size: 14px; }
-    textarea { height: 120px; color: white; background: #1e293b; border: 1px solid #475569; resize: none; }
-    .btn { width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; background: #60a5fa; color: #0f172a; font-size: 16px; }
-    .btn:hover { background: #93c5fd; transform: scale(0.98); }
-    #output { background: #020617; padding: 15px; border-radius: 12px; border: 1px solid #334155; margin-top: 15px; min-height: 80px; white-space: pre-wrap; font-size: 15px; line-height: 1.5; }
-    .loader { color: #fbbf24; font-size: 14px; display: none; text-align: center; margin-bottom: 10px; font-style: italic; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+    }
+    .container {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+      border: 1px solid #334155;
+    }
+    h1 { text-align: center; color: #60a5fa; margin-bottom: 25px; font-size: 22px; }
+
+    input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      outline: none;
+      font-size: 15px;
+      transition: 0.3s;
+      font-family: inherit;
+    }
+    input:focus { border-color: #60a5fa; }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      color: #f8fafc;
+      background: #1e293b;
+      border: 1px solid #475569;
+      padding: 12px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      outline: none;
+      resize: none;
+      font-size: 15px;
+      transition: 0.3s;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: #60a5fa; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 15px;
+      margin-bottom: 10px;
+      font-family: inherit;
+    }
+    .btn-blue { background: #60a5fa; color: #0f172a; }
+    .btn-blue:hover { background: #93c5fd; transform: scale(0.98); }
+    .btn-gray { background: #334155; color: #94a3b8; }
+    .btn-gray:hover { background: #475569; }
+    .btn-red { background: #ef4444; color: white; width: auto; padding: 8px 14px; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; font-family: inherit; }
+    .btn-red:hover { background: #f87171; }
+
+    .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    #output {
+      background: #020617;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid #334155;
+      margin-top: 20px;
+      min-height: 100px;
+      white-space: pre-wrap;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .loader {
+      color: #fbbf24;
+      font-size: 14px;
+      display: none;
+      margin: 10px 0;
+      text-align: center;
+      font-style: italic;
+    }
+    .error-msg { font-size: 14px; text-align: center; margin-bottom: 10px; min-height: 20px; }
+    .user-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+    .user-email { color: #60a5fa; font-size: 13px; }
+
+    .tab-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+      font-family: inherit;
+    }
+    .tab-btn.active { background: #60a5fa; color: #0f172a; border-color: #60a5fa; font-weight: bold; }
+
+    #authPage, #appPage { display: none; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🚀 AI Помощник 7 Класс</h1>
-  
-  <input type="password" id="apiKey" placeholder="Вставь API-ключ (AIza...)">
-  <textarea id="userInput" placeholder="Напиши задачу по физике, геометрии или вопрос..."></textarea>
-  
-  <div id="loader" class="loader">Связываюсь с нейросетью...</div>
-  <button onclick="askGemini()" class="btn">✨ Спросить нейросеть</button>
-  
-  <div id="output">Ответ появится здесь...</div>
+  <h1>🚀 AI Помощник</h1>
+
+  <!-- СТРАНИЦА ВХОДА -->
+  <div id="authPage">
+    <div class="tab-btns">
+      <button class="tab-btn active" onclick="switchTab('login')">Войти</button>
+      <button class="tab-btn" onclick="switchTab('register')">Регистрация</button>
+    </div>
+
+    <input type="email" id="email" placeholder="Email">
+    <input type="password" id="password" placeholder="Пароль">
+
+    <div class="error-msg" id="authError"></div>
+
+    <button class="btn btn-blue" id="authBtn" onclick="handleAuth()">Войти</button>
+  </div>
+
+  <!-- СТРАНИЦА ПРИЛОЖЕНИЯ -->
+  <div id="appPage">
+    <div class="user-info">
+      <span class="user-email" id="userEmail"></span>
+      <button class="btn-red" onclick="logout()">Выйти</button>
+    </div>
+
+    <textarea id="userInput" placeholder="Напиши задачу или вопрос..."></textarea>
+
+    <div class="loader" id="loader">Нейросеть обрабатывает запрос...</div>
+
+    <div class="btn-row">
+      <button onclick="askAI()" class="btn btn-blue" style="grid-column: span 2; margin-bottom: 10px;">Отправить</button>
+      <button onclick="document.getElementById('userInput').value=''" class="btn btn-gray">Очистить</button>
+      <button onclick="document.getElementById('output').textContent=''" class="btn btn-gray">Сбросить</button>
+    </div>
+
+    <div id="output">Ответ появится здесь...</div>
+  </div>
 </div>
 
 <script>
-  async function askGemini() {
-    const keyField = document.getElementById('apiKey');
-    const inputField = document.getElementById('userInput');
+  const SUPABASE_URL = 'https://ambctoxletkjmmrpcfpe.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_9-zr3XWaB2gl2LtB0Gg2Qw_HU8CTe_q';
+  // AIzaSyBWJ9b4uxQIo-6t71UrRvPxCeDzEz2UzJw:
+  const GEMINI_KEY = 'ТВОЙ_GEMINI_КЛЮЧ';
+
+  const { createClient } = supabase;
+  const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let currentTab = 'login';
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+      b.classList.toggle('active', (tab === 'login' && i === 0) || (tab === 'register' && i === 1));
+    });
+    document.getElementById('authBtn').textContent = tab === 'login' ? 'Войти' : 'Зарегистрироваться';
+    document.getElementById('authError').textContent = '';
+  }
+
+  async function handleAuth() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const errEl = document.getElementById('authError');
+    errEl.textContent = '';
+
+    if (!email || !password) { errEl.style.color = '#f87171'; errEl.textContent = 'Введи email и пароль'; return; }
+
+    const btn = document.getElementById('authBtn');
+    btn.textContent = 'Подождите...';
+    btn.disabled = true;
+
+    try {
+      let result;
+      if (currentTab === 'login') {
+        result = await sb.auth.signInWithPassword({ email, password });
+      } else {
+        result = await sb.auth.signUp({ email, password });
+      }
+
+      if (result.error) throw result.error;
+
+      if (currentTab === 'register') {
+        errEl.style.color = '#4ade80';
+        errEl.textContent = '✅ Аккаунт создан! Теперь войди.';
+        switchTab('login');
+      } else {
+        showApp(result.data.user);
+      }
+    } catch (err) {
+      errEl.style.color = '#f87171';
+      errEl.textContent = '❌ ' + (err.message || 'Ошибка входа');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = currentTab === 'login' ? 'Войти' : 'Зарегистрироваться';
+    }
+  }
+
+  async function logout() {
+    await sb.auth.signOut();
+    document.getElementById('appPage').style.display = 'none';
+    document.getElementById('authPage').style.display = 'block';
+  }
+
+  function showApp(user) {
+    document.getElementById('authPage').style.display = 'none';
+    document.getElementById('appPage').style.display = 'block';
+    document.getElementById('userEmail').textContent = user.email;
+  }
+
+  async function askAI() {
+    const text = document.getElementById('userInput').value.trim();
     const output = document.getElementById('output');
     const loader = document.getElementById('loader');
 
-    const key = keyField.value.trim();
-    const text = inputField.value.trim();
-
-    if (!key || !text) {
-        alert("Заполни ключ и напиши вопрос!");
-        return;
-    }
+    if (!text) { alert('Напиши вопрос!'); return; }
 
     loader.style.display = 'block';
+    output.textContent = 'Думаю...';
     output.style.opacity = '0.5';
 
     try {
-      // ИСПОЛЬЗУЕМ СТАБИЛЬНУЮ ВЕРСИЮ V1
-     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
-
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_KEY}`;
       const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: "Ты — краткий и понятный помощник для ученика 7 класса. Ответь на вопрос: " + text }] }]
-        })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text }] }] })
       });
 
       const data = await response.json();
+      if (!response.ok) throw new Error(data?.error?.message || `Ошибка ${response.status}`);
 
-      if (data.error) {
-        output.innerText = "❌ Ошибка: " + data.error.message;
-      } else if (data.candidates && data.candidates[0].content) {
-        output.innerText = data.candidates[0].content.parts[0].text;
-      } else {
-        output.innerText = "⚠️ Не удалось получить ответ. Проверь ключ.";
-      }
+      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!reply) throw new Error('Пустой ответ');
+
+      output.textContent = reply;
     } catch (err) {
-      output.innerText = "⚠️ Ошибка связи. Возможно, включен блокировщик или нет интернета.";
-      console.error(err);
+      output.textContent = '❌ Ошибка: ' + err.message;
     } finally {
       loader.style.display = 'none';
       output.style.opacity = '1';
     }
   }
+
+  // Проверяем сессию при загрузке
+  sb.auth.getSession().then(({ data }) => {
+    if (data.session) {
+      showApp(data.session.user);
+    } else {
+      document.getElementById('authPage').style.display = 'block';
+    }
+  });
 </script>
 
 </body>
